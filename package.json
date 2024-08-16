@@ -1,0 +1,12 @@
+{
+  "name": "heroku-node-app",
+  "version": "1.0.0",
+  "description": "Node.js app for Chrome Remote Desktop setup",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
