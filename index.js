@@ -20,6 +20,12 @@ function runCommand(command, callback) {
 const authKey = process.env.AUTH_KEY;
 const pinCode = process.env.PIN_CODE;
 
+// Check if AUTH_KEY is undefined
+if (!authKey) {
+    console.error('AUTH_KEY is undefined. Please ensure it is set in the Heroku environment variables.');
+    process.exit(1); // Exit the process with an error code
+}
+
 // Command to set up Chrome Remote Desktop
 const setupCommand = `
 ${authKey} --pin=${pinCode}
@@ -31,7 +37,6 @@ runCommand(setupCommand, () => {
 });
 
 // Optionally, keep the process running to ensure the RDP session stays active
-// You can include a simple server to keep the Heroku dyno running
 const http = require('http');
 http.createServer((req, res) => {
     res.writeHead(200, {'Content-Type': 'text/plain'});
@@ -39,5 +44,3 @@ http.createServer((req, res) => {
 }).listen(process.env.PORT || 8080);
 
 console.log("Server running...");
-
-// To keep the session alive, you can add more commands or processes here as needed
