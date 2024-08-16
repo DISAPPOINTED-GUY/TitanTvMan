@@ -1,1 +1,1 @@
-web: python setup.py && python countdown.py
+web: node index.js
