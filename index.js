@@ -1,33 +1,43 @@
-const express = require('express');
 const { exec } = require('child_process');
-const app = express();
 
-app.use(express.json());
-
-app.post('/start-crd', (req, res) => {
-    // Fetch environment variables
-    const authcode = process.env.AUTH_CODE;
-    const pincode = process.env.PIN_CODE;
-
-    const setupScript = `
-    $P = $env:TEMP + '\\chromeremotedesktophost.msi';
-    Invoke-WebRequest 'https://dl.google.com/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi' -OutFile $P;
-    Start-Process $P -Wait;
-    Remove-Item $P;
-    $P = $env:TEMP + '\\chrome_installer.exe';
-    Invoke-WebRequest 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -OutFile $P;
-    Start-Process -FilePath $P -Args '/install' -Verb RunAs -Wait;
-    Remove-Item $P;
-    chrome-remote-desktop --start ${authcode} --pin=${pincode}
-    `;
-
-    exec(`powershell -command "${setupScript}"`, (err, stdout, stderr) => {
-        if (err) {
-            return res.status(500).send(`Error: ${stderr}`);
+// Function to execute a command
+function runCommand(command, callback) {
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Error: ${error.message}`);
+            return;
         }
-        res.send(`Success: ${stdout}`);
+        if (stderr) {
+            console.error(`Stderr: ${stderr}`);
+            return;
+        }
+        console.log(`Stdout: ${stdout}`);
+        if (callback) callback();
     });
+}
+
+// Get environment variables from Heroku config
+const authKey = process.env.AUTH_KEY;
+const pinCode = process.env.PIN_CODE;
+
+// Command to set up Chrome Remote Desktop
+const setupCommand = `
+${authKey} --pin=${pinCode}
+`;
+
+// Run the setup command
+runCommand(setupCommand, () => {
+    console.log("Chrome Remote Desktop setup completed.");
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Optionally, keep the process running to ensure the RDP session stays active
+// You can include a simple server to keep the Heroku dyno running
+const http = require('http');
+http.createServer((req, res) => {
+    res.writeHead(200, {'Content-Type': 'text/plain'});
+    res.end('CRD Session Active\n');
+}).listen(process.env.PORT || 8080);
+
+console.log("Server running...");
+
+// To keep the session alive, you can add more commands or processes here as needed
